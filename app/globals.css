@@ -455,3 +455,38 @@ button.borrar {
   margin: 0 -4px;
   padding: 0 4px;
 }
+
+/* Ajustes para móvil */
+html, body { overflow-x: hidden; }
+form.nuevo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+form.nuevo > div { min-width: 0; }
+input, select { min-width: 0; max-width: 100%; }
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-height: 44px;
+  text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input[type="number"], input[type="text"], select { min-height: 44px; }
+.gf-editable { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto auto; }
+.cat-editable { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto; }
+.acciones-mov { white-space: nowrap; }
+.resumen-mes-header { gap: 10px; }
+.pill { white-space: nowrap; }
+@media (max-width: 520px) {
+  .container { padding: 16px 12px 60px; }
+  .card { padding: 16px; }
+  .saldo-actual .valor { font-size: 2.3rem; }
+  .resumen-mes-header { flex-wrap: wrap; }
+  table { font-size: 0.78rem; }
+  th, td { padding: 8px 3px; }
+  th { font-size: 0.64rem; letter-spacing: 0; }
+  .acciones-mov .mini-btn { padding: 3px 7px; }
+  .acciones-mov .borrar { padding: 2px 3px; }
+  .tabla-scroll { margin: 0 -8px; padding: 0 2px; }
+  .gf-editable { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .gf-editable input:first-child { grid-column: 1 / -1; }
+  .cat-editable { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; }
+}

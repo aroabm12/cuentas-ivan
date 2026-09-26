@@ -952,14 +952,14 @@ export default function Home() {
                 />
               ) : (
                 <tr key={m.id}>
-                  <td>{new Date(m.fecha).toLocaleDateString("es-ES")}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{new Date(m.fecha).toLocaleDateString("es-ES", { day: "numeric", month: "numeric", year: "2-digit" })}</td>
                   <td>{m.concepto}</td>
                   <td className="num gasto">{Number(m.gasto) ? money(m.gasto) : ""}</td>
                   <td className="num ingreso">{Number(m.ingreso) ? money(m.ingreso) : ""}</td>
                   <td className="num saldo-col">{money(m.saldo)}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <button type="button" className="mini-btn" onClick={() => setMovEditandoId(m.id)}>
-                      editar
+                  <td className="acciones-mov">
+                    <button type="button" className="mini-btn" aria-label="Editar" title="Editar" onClick={() => setMovEditandoId(m.id)}>
+                      ✎
                     </button>{" "}
                     <button className="borrar" onClick={() => borrar(m.id)}>✕</button>
                   </td>

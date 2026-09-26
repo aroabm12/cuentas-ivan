@@ -50,8 +50,7 @@ export default function Home() {
   const [editandoSaldo, setEditandoSaldo] = useState(false);
   const [nuevoSaldoInicial, setNuevoSaldoInicial] = useState("");
   const [editandoMeta, setEditandoMeta] = useState(false);
-  const [metaMinInput, setMetaMinInput] = useState("");
-  const [metaMaxInput, setMetaMaxInput] = useState("");
+  const [metaInput, setMetaInput] = useState("");
 
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [concepto, setConcepto] = useState("");
@@ -77,12 +76,12 @@ export default function Home() {
     setError("");
     try {
       const [rMov, rCfg, rGF, rIF, rVar, rOv] = await Promise.all([
-        fetch("/api/movimientos"),
-        fetch("/api/config"),
-        fetch("/api/gastos-fijos"),
-        fetch("/api/ingresos-fijos"),
-        fetch("/api/presupuesto-variable"),
-        fetch("/api/overrides-mensuales"),
+        fetch("/api/movimientos", { cache: "no-store" }),
+        fetch("/api/config", { cache: "no-store" }),
+        fetch("/api/gastos-fijos", { cache: "no-store" }),
+        fetch("/api/ingresos-fijos", { cache: "no-store" }),
+        fetch("/api/presupuesto-variable", { cache: "no-store" }),
+        fetch("/api/overrides-mensuales", { cache: "no-store" }),
       ]);
       for (const r of [rMov, rCfg, rGF, rIF, rVar, rOv]) {
         if (!r.ok) throw new Error(`Error ${r.status} cargando datos`);
@@ -298,16 +297,25 @@ export default function Home() {
   }
 
   async function guardarMeta() {
-    await fetch("/api/config", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        meta_min: Number(metaMinInput),
-        meta_max: Number(metaMaxInput),
-      }),
-    });
-    setEditandoMeta(false);
-    cargarTodo();
+    const valor = Number(String(metaInput).replace(",", ".").trim() || 0);
+    if (!Number.isFinite(valor) || valor < 0) {
+      setError("La meta de ahorro tiene que ser un número (por ejemplo 0 o 200).");
+      return;
+    }
+    try {
+      const res = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meta_min: valor, meta_max: valor }),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      setConfig((c) => ({ ...c, meta_min: valor, meta_max: valor }));
+      setEditandoMeta(false);
+      setError("");
+      cargarTodo();
+    } catch (err) {
+      setError("No se ha podido guardar la meta de ahorro: " + err.message);
+    }
   }
 
   async function guardarIngresosPrevistosMes() {
@@ -497,7 +505,7 @@ export default function Home() {
   const ahorroMesAnterior = ingresosMesAnterior - gastosMesAnterior;
 
   // ---- Gráfico de tarta: en qué se ha ido el dinero este mes ----
-  const PALETA_TARTA = ["#75978f", "#a08384", "#a9aa85", "#c0392b", "#5c7d76", "#d9a25c", "#7c9caf", "#8e7cc3", "#b0aa8f"];
+  const PALETA_TARTA = ["#1e3a8a", "#2563eb", "#0891b2", "#475569", "#60a5fa", "#0f766e", "#94a3b8", "#b45309", "#cbd5e1"];
   function claseDeGasto(m) {
     if (gastosFijos.some((gf) => m.concepto.toLowerCase().includes(gf.concepto.toLowerCase()))) {
       return "Gastos fijos";
@@ -587,7 +595,7 @@ export default function Home() {
       </div>
 
       <div className={"card tarjeta-hoy" + (ingresosHoy.length || gastosHoy.length ? " con-eventos" : "")}>
-        <h2 className="card-title">📅 Hoy, {hoy.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}</h2>
+        <h2 className="card-title">Hoy, {hoy.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}</h2>
         {ingresosHoy.length === 0 && gastosHoy.length === 0 ? (
           <p className="subtitle" style={{ margin: "8px 0 0" }}>
             No tienes ningún ingreso ni gasto fijo previsto para hoy.
@@ -596,7 +604,7 @@ export default function Home() {
           <div style={{ marginTop: 10 }}>
             {ingresosHoy.map((iff) => (
               <div key={"ing-" + iff.id} className="hoy-item ingreso">
-                <span>🎉 Hoy cobras: {iff.concepto}</span>
+                <span>Hoy cobras: {iff.concepto}</span>
                 <span className="gf-right">
                   {money(iff.importe)}
                   <button type="button" className="mini-btn" onClick={() => registrarIngresoRapido(iff)}>
@@ -607,7 +615,7 @@ export default function Home() {
             ))}
             {gastosHoy.map((gf) => (
               <div key={"gas-" + gf.id} className="hoy-item gasto">
-                <span>💸 Hoy se te cobra: {gf.concepto}</span>
+                <span>Hoy se te cobra: {gf.concepto}</span>
                 <span className="gf-right">
                   {money(gf.importe)}
                   <button type="button" className="mini-btn" onClick={() => registrarRapido(gf)}>
@@ -623,7 +631,7 @@ export default function Home() {
       <h3 className="seccion no-imprimir">Tu mes</h3>
       <div className="selector-mes">
         <button type="button" className="mes-btn" onClick={mesAnterior}>‹</button>
-        <span className="mes-actual" style={{ textTransform: "capitalize" }}>{nombreMes}</span>
+        <span className="mes-actual">{nombreMes}</span>
         <button type="button" className="mes-btn" onClick={mesSiguiente}>›</button>
         {!esMesActual && (
           <button type="button" className="link-btn" style={{ marginLeft: 8 }} onClick={irAHoy}>
@@ -693,7 +701,7 @@ export default function Home() {
 
       <div className={"card resumen-mes" + (enMeta ? " en-meta" : " fuera-meta")}>
         <div className="resumen-mes-header">
-          <h2 className="card-title">💰 Tu presupuesto de este mes</h2>
+          <h2 className="card-title">Tu presupuesto de este mes</h2>
           <span className={"pill" + (enMeta ? " verde" : " rojo")}>
             {enMeta ? "Vas dentro de presupuesto" : "Te has pasado"}
           </span>
@@ -759,8 +767,7 @@ export default function Home() {
                 className="link-btn"
                 style={{ marginLeft: 6 }}
                 onClick={() => {
-                  setMetaMinInput(String(metaMin));
-                  setMetaMaxInput(String(metaMax));
+                  setMetaInput(String(metaMin));
                   setEditandoMeta(true);
                 }}
               >
@@ -772,10 +779,16 @@ export default function Home() {
         </div>
         {editandoMeta && (
           <div className="editar-saldo" style={{ marginBottom: 10 }}>
-            <input type="number" step="1" value={metaMinInput} onChange={(e) => setMetaMinInput(e.target.value)} />
-            <span>—</span>
-            <input type="number" step="1" value={metaMaxInput} onChange={(e) => setMetaMaxInput(e.target.value)} />
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="Meta de ahorro (€)"
+              value={metaInput}
+              onChange={(e) => setMetaInput(e.target.value)}
+            />
+            <span>€</span>
             <button type="button" onClick={guardarMeta}>Guardar</button>
+            <button type="button" className="link-btn" onClick={() => setEditandoMeta(false)}>Cancelar</button>
           </div>
         )}
         <div className="presupuesto-linea total">
@@ -809,7 +822,7 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <h2 className="card-title">📌 Gastos fijos de este mes</h2>
+        <h2 className="card-title">Gastos fijos de este mes</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           Toca uno pendiente para apuntarlo con un clic (usa el importe de siempre y la fecha de hoy).
         </p>
@@ -831,7 +844,7 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <h2 className="card-title">🛍️ Gastos variables de este mes</h2>
+        <h2 className="card-title">Gastos variables de este mes</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           Se rellena solo con lo que escribes abajo en "Añadir movimiento" si el concepto se parece al nombre de la categoría.
         </p>
@@ -883,7 +896,7 @@ export default function Home() {
 
       <h3 className="seccion no-imprimir">Movimientos</h3>
       <div className="card no-imprimir">
-        <h2 className="card-title">➕ Añadir movimiento</h2>
+        <h2 className="card-title">Añadir movimiento</h2>
         <form className="nuevo" onSubmit={guardarMovimiento}>
           <div className="tipo-toggle">
             <button type="button" className={tipo === "gasto" ? "activo gasto" : ""} onClick={() => setTipo("gasto")}>
@@ -923,7 +936,7 @@ export default function Home() {
 
       <div className="card">
         <div className="resumen-mes-header">
-          <h2 className="card-title">🧾 Movimientos</h2>
+          <h2 className="card-title">Movimientos</h2>
           <button type="button" className="link-btn" onClick={() => setMostrarTodosMovs((v) => !v)}>
             {mostrarTodosMovs ? "ver solo este mes" : "ver todos"}
           </button>
@@ -968,7 +981,7 @@ export default function Home() {
             )}
             {!loading && listaMovsMostrada.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ color: "#888", padding: "16px 0" }}>
+                <td colSpan={6} style={{ color: "var(--color-muted)", padding: "16px 0" }}>
                   {mostrarTodosMovs
                     ? "Todavía no has añadido ningún movimiento."
                     : "No hay movimientos este mes."}
@@ -1107,16 +1120,16 @@ export default function Home() {
       </div>
 
       <div className="card no-imprimir">
-        <h2 className="card-title">📤 Exportar mis datos</h2>
+        <h2 className="card-title">Exportar mis datos</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           El Excel lleva varias pestañas (Resumen, Movimientos, Gastos Fijos, Gastos Variables). El PDF es un informe con la comparativa del mes anterior y el gráfico de gastos.
         </p>
         <div style={{ display: "flex", gap: 10 }}>
           <button type="button" onClick={exportarExcel} style={{ flex: 1 }}>
-            📊 Descargar Excel
+            Descargar Excel
           </button>
           <button type="button" onClick={exportarPDF} style={{ flex: 1 }}>
-            🖨️ Exportar a PDF
+            Exportar a PDF
           </button>
         </div>
       </div>

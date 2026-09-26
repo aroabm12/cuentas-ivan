@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 function money(n) {
   return Number(n).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
@@ -487,13 +487,73 @@ export default function Home() {
       ["Saldo total", saldoDelMes],
       ["Ahorro total", saldoDelMes],
     ];
+    // Colores de la app: azul marino, verde para ingresos, rojo para gastos.
+    const C = {
+      marino: "0F172A",
+      gris: "E2E8F0",
+      borde: "CBD5E1",
+      verde: "047857",
+      verdeClaro: "D1FAE5",
+      rojo: "B91C1C",
+    };
+    const EUR = '#,##0.00 "€"';
+    const EUR_SIGNO = '+#,##0.00 "€";-#,##0.00 "€";0.00 "€"';
+    const lineaFina = { style: "thin", color: { rgb: C.borde } };
+    const bordes = { top: lineaFina, bottom: lineaFina, left: lineaFina, right: lineaFina };
+    const fondo = (rgb) => ({ patternType: "solid", fgColor: { rgb } });
+    const estilar = (ws, celda, estilo) => {
+      if (!ws[celda]) ws[celda] = { t: "s", v: "" };
+      ws[celda].s = estilo;
+    };
+
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenAOA);
-    wsResumen["!cols"] = [{ wch: 28 }, { wch: 14 }];
-    for (const celda of Object.keys(wsResumen)) {
-      if (celda.startsWith("B") && typeof wsResumen[celda].v === "number") wsResumen[celda].z = '#,##0.00 "€"';
-    }
-    const celdaAhorro = "B" + resumenAOA.length;
-    wsResumen[celdaAhorro].z = '+#,##0.00 "€";-#,##0.00 "€";0.00 "€"';
+    wsResumen["!cols"] = [{ wch: 28 }, { wch: 16 }];
+    wsResumen["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+    wsResumen["!rows"] = [{ hpt: 26 }];
+
+    const filaTotalFijos = resumenAOA.findIndex((f) => f[0] === "Gastos fijos (Total)");
+    const filaTotalVariables = resumenAOA.findIndex((f) => f[0] === "Gastos variables (Total)");
+    const filaSaldo = resumenAOA.findIndex((f) => f[0] === "Saldo total");
+    resumenAOA.forEach((fila, i) => {
+      const A = "A" + (i + 1);
+      const B = "B" + (i + 1);
+      if (i === 0) {
+        const titulo = {
+          font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+          fill: fondo(C.marino),
+          alignment: { vertical: "center" },
+        };
+        estilar(wsResumen, A, titulo);
+        estilar(wsResumen, B, titulo);
+        return;
+      }
+      if (fila.length === 0) return; // filas en blanco sin bordes
+      const esIngresos = fila[0] === "Ingresos";
+      const esTotalGastos = i === filaTotalFijos || i === filaTotalVariables;
+      const esResultado = i >= filaSaldo;
+      const valor = Number(fila[1]) || 0;
+
+      let estiloA = { font: { color: { rgb: C.marino } }, border: bordes, alignment: { indent: 1 } };
+      let estiloB = { font: { color: { rgb: C.marino } }, border: bordes, numFmt: EUR };
+      if (esIngresos) {
+        estiloA = { font: { bold: true, color: { rgb: C.marino } }, fill: fondo(C.verdeClaro), border: bordes };
+        estiloB = { font: { bold: true, color: { rgb: C.verde } }, fill: fondo(C.verdeClaro), border: bordes, numFmt: EUR };
+      } else if (esTotalGastos) {
+        estiloA = { font: { bold: true, color: { rgb: C.marino } }, fill: fondo(C.gris), border: bordes };
+        estiloB = { font: { bold: true, color: { rgb: C.marino } }, fill: fondo(C.gris), border: bordes, numFmt: EUR };
+      } else if (esResultado) {
+        const bordeResultado = { ...bordes, top: { style: "medium", color: { rgb: C.marino } } };
+        const colorValor = valor > 0 ? C.verde : valor < 0 ? C.rojo : C.marino;
+        estiloA = { font: { bold: true, color: { rgb: C.marino } }, border: bordeResultado };
+        estiloB = {
+          font: { bold: true, color: { rgb: colorValor } },
+          border: bordeResultado,
+          numFmt: fila[0] === "Ahorro total" ? EUR_SIGNO : EUR,
+        };
+      }
+      estilar(wsResumen, A, estiloA);
+      estilar(wsResumen, B, estiloB);
+    });
     XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
 
     // ---- Movimientos ----
@@ -509,6 +569,27 @@ export default function Home() {
     ];
     const wsMov = XLSX.utils.aoa_to_sheet(movAOA);
     wsMov["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+    const columnas = ["A", "B", "C", "D", "E"];
+    movAOA.forEach((fila, i) => {
+      columnas.forEach((col, j) => {
+        const celda = col + (i + 1);
+        if (i === 0) {
+          estilar(wsMov, celda, {
+            font: { bold: true, color: { rgb: "FFFFFF" } },
+            fill: fondo(C.marino),
+            border: bordes,
+            alignment: { horizontal: j >= 2 ? "right" : "left" },
+          });
+          return;
+        }
+        const color = j === 2 ? C.rojo : j === 3 ? C.verde : C.marino;
+        estilar(wsMov, celda, {
+          font: { bold: j === 4, color: { rgb: color } },
+          border: bordes,
+          ...(j >= 2 ? { numFmt: EUR } : {}),
+        });
+      });
+    });
     XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
 
     XLSX.writeFile(wb, `mis_cuentas_${claveMes}.xlsx`);

@@ -429,9 +429,10 @@ export default function Home() {
 
     // ---- Resumen: solo lo que ha pasado de verdad este mes ----
     // Ingresos, gastos fijos desglosados y gastos variables desglosados
-    // por categoría, con una línea en blanco entre bloques. "Saldo total"
-    // es lo que queda este mes (ingresos − fijos − variables) y "Ahorro
-    // total" el dinero que tienes en total ahora mismo.
+    // por categoría, con una línea en blanco entre bloques. Todo es solo
+    // del mes elegido: "Saldo total" es ingresos − fijos − variables y
+    // "Ahorro total" es ese mismo resultado con su signo (+ si ahorras,
+    // − si gastas más de lo que entra). Si el mes no tiene datos, sale 0.
     const gastosDelMes = movDelMes.filter((m) => Number(m.gasto) > 0);
 
     const fijoDe = (m) => gastosFijos.find((gf) => m.concepto.toLowerCase().includes(gf.concepto.toLowerCase()));
@@ -466,13 +467,15 @@ export default function Home() {
       ...variablesDesglose,
       [],
       ["Saldo total", saldoDelMes],
-      ["Ahorro total", saldoActual],
+      ["Ahorro total", saldoDelMes],
     ];
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenAOA);
     wsResumen["!cols"] = [{ wch: 28 }, { wch: 14 }];
     for (const celda of Object.keys(wsResumen)) {
       if (celda.startsWith("B") && typeof wsResumen[celda].v === "number") wsResumen[celda].z = '#,##0.00 "€"';
     }
+    const celdaAhorro = "B" + resumenAOA.length;
+    wsResumen[celdaAhorro].z = '+#,##0.00 "€";-#,##0.00 "€";0.00 "€"';
     XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
 
     // ---- Movimientos ----

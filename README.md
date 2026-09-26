@@ -48,7 +48,7 @@ partida** y pon tu saldo real de hoy (tarjeta + ahorro juntos).
 
 - **Saldo actual**: tarjeta y ahorro juntos en un solo número.
 - **Resumen del mes**: ingresos, gastos y ahorro real, comparado con tu meta
-  de ahorro (editable, por defecto 450-500€) — en verde si la alcanzas, en
+  de ahorro (editable, por defecto 0€) — en verde si la alcanzas, en
   rojo si no.
 - **Gastos fijos de este mes**: lista con lo que ya has apuntado y lo que
   falta, con un botón para apuntarlo con un clic.

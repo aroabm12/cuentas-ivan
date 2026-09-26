@@ -428,15 +428,11 @@ export default function Home() {
     const wb = XLSX.utils.book_new();
 
     // ---- Resumen: solo lo que ha pasado de verdad este mes ----
-    // Ingresos, luego gastos fijos desglosados, luego gastos variables
-    // desglosados por categoría, con una línea en blanco entre bloques.
+    // Ingresos, gastos fijos desglosados y gastos variables desglosados
+    // por categoría, con una línea en blanco entre bloques. "Saldo total"
+    // es lo que queda este mes (ingresos − fijos − variables) y "Ahorro
+    // total" el dinero que tienes en total ahora mismo.
     const gastosDelMes = movDelMes.filter((m) => Number(m.gasto) > 0);
-    const ingresosDelMes = movDelMes.filter((m) => Number(m.ingreso) > 0);
-
-    const ingresosPorConcepto = {};
-    for (const m of ingresosDelMes) {
-      ingresosPorConcepto[m.concepto] = (ingresosPorConcepto[m.concepto] || 0) + Number(m.ingreso);
-    }
 
     const fijoDe = (m) => gastosFijos.find((gf) => m.concepto.toLowerCase().includes(gf.concepto.toLowerCase()));
     const fijosDesglose = gastosFijos.map((gf) => [
@@ -457,26 +453,23 @@ export default function Home() {
     );
     const totalVariables = variablesDesglose.reduce((s, [, v]) => s + v, 0);
 
+    const saldoDelMes = ingresosMes - totalFijos - totalVariables;
     const resumenAOA = [
       [`Mis Cuentas — ${nombreMes}`],
       [],
-      ["INGRESOS", ingresosMes],
-      ...Object.entries(ingresosPorConcepto).map(([c, v]) => ["   " + c, v]),
+      ["Ingresos", ingresosMes],
       [],
-      ["GASTOS FIJOS", totalFijos],
-      ...fijosDesglose.map(([c, v]) => ["   " + c, v]),
+      ["Gastos fijos (Total)", totalFijos],
+      ...fijosDesglose,
       [],
-      ["GASTOS VARIABLES", totalVariables],
-      ...variablesDesglose.map(([c, v]) => ["   " + c, v]),
+      ["Gastos variables (Total)", totalVariables],
+      ...variablesDesglose,
       [],
-      ["TOTAL INGRESOS", ingresosMes],
-      ["TOTAL GASTOS", gastosMes],
-      ["AHORRO DEL MES", ahorroRealMes],
-      [],
-      ["Saldo total actual", saldoActual],
+      ["Saldo total", saldoDelMes],
+      ["Ahorro total", saldoActual],
     ];
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenAOA);
-    wsResumen["!cols"] = [{ wch: 30 }, { wch: 14 }];
+    wsResumen["!cols"] = [{ wch: 28 }, { wch: 14 }];
     for (const celda of Object.keys(wsResumen)) {
       if (celda.startsWith("B") && typeof wsResumen[celda].v === "number") wsResumen[celda].z = '#,##0.00 "€"';
     }

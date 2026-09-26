@@ -286,14 +286,32 @@ export default function Home() {
     cargarTodo();
   }
 
+  // Lo que escribes es el dinero que tienes HOY. Como el saldo que se
+  // muestra es saldo de partida + ingresos − gastos de todos los
+  // movimientos, el saldo de partida se calcula para que cuadre.
   async function guardarSaldoInicial() {
-    await fetch("/api/config", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ saldo_inicial: Number(nuevoSaldoInicial) }),
-    });
-    setEditandoSaldo(false);
-    cargarTodo();
+    const texto = String(nuevoSaldoInicial).replace(",", ".").trim();
+    const saldoHoy = Number(texto || 0);
+    if (!Number.isFinite(saldoHoy)) {
+      setError("El saldo tiene que ser un número (por ejemplo 0 o 1250,50).");
+      return;
+    }
+    const netoMovimientos = movimientos.reduce((s, m) => s + Number(m.ingreso) - Number(m.gasto), 0);
+    const nuevoInicial = Math.round((saldoHoy - netoMovimientos) * 100) / 100;
+    try {
+      const res = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ saldo_inicial: nuevoInicial }),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      setSaldoInicial(nuevoInicial);
+      setEditandoSaldo(false);
+      setError("");
+      cargarTodo();
+    } catch (err) {
+      setError("No se ha podido guardar el saldo: " + err.message);
+    }
   }
 
   async function guardarMeta() {
@@ -577,27 +595,30 @@ export default function Home() {
         <div className="label">Tienes ahora mismo</div>
         <div className="valor">{loading ? "…" : money(saldoActual)}</div>
         {!editandoSaldo ? (
-          <div className="editar-saldo" style={{ justifyContent: "center" }}>
+          <div className="editar-saldo">
             <button
               type="button"
               onClick={() => {
-                setNuevoSaldoInicial(String(saldoInicial));
+                setNuevoSaldoInicial(String(Math.round(saldoActual * 100) / 100));
                 setEditandoSaldo(true);
               }}
               className="link-btn"
             >
-              Corregir saldo de partida
+              Corregir saldo
             </button>
           </div>
         ) : (
-          <div className="editar-saldo" style={{ justifyContent: "center" }}>
+          <div className="editar-saldo">
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              aria-label="Dinero que tienes hoy (€)"
               value={nuevoSaldoInicial}
               onChange={(e) => setNuevoSaldoInicial(e.target.value)}
             />
+            <span>€</span>
             <button type="button" onClick={guardarSaldoInicial}>Guardar</button>
+            <button type="button" className="link-btn" onClick={() => setEditandoSaldo(false)}>Cancelar</button>
           </div>
         )}
       </div>

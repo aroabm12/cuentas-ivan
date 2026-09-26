@@ -1037,7 +1037,7 @@ export default function Home() {
 
       <div className="card no-imprimir">
         <button type="button" className="link-btn" onClick={() => setMostrarGestionIng((v) => !v)}>
-          {mostrarGestionIng ? "Ocultar gestión de ingresos fijos" : "Gestionar mis ingresos fijos (el Paro, etc.)"}
+          {mostrarGestionIng ? "Ocultar gestión de ingresos fijos" : "Gestionar mis ingresos fijos"}
         </button>
         {mostrarGestionIng && (
           <div style={{ marginTop: 12 }}>

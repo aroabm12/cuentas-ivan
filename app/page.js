@@ -427,29 +427,59 @@ export default function Home() {
   function exportarExcel() {
     const wb = XLSX.utils.book_new();
 
-    // ---- Resumen ----
+    // ---- Resumen: solo lo que ha pasado de verdad este mes ----
+    // Ingresos, luego gastos fijos desglosados, luego gastos variables
+    // desglosados por categoría, con una línea en blanco entre bloques.
+    const gastosDelMes = movDelMes.filter((m) => Number(m.gasto) > 0);
+    const ingresosDelMes = movDelMes.filter((m) => Number(m.ingreso) > 0);
+
+    const ingresosPorConcepto = {};
+    for (const m of ingresosDelMes) {
+      ingresosPorConcepto[m.concepto] = (ingresosPorConcepto[m.concepto] || 0) + Number(m.ingreso);
+    }
+
+    const fijoDe = (m) => gastosFijos.find((gf) => m.concepto.toLowerCase().includes(gf.concepto.toLowerCase()));
+    const fijosDesglose = gastosFijos.map((gf) => [
+      gf.concepto,
+      gastosDelMes.filter((m) => fijoDe(m) === gf).reduce((s, m) => s + Number(m.gasto), 0),
+    ]);
+    const totalFijos = fijosDesglose.reduce((s, [, v]) => s + v, 0);
+
+    const variablesPorCategoria = {};
+    for (const cat of presupuestoVariable) variablesPorCategoria[cat.concepto] = 0;
+    for (const m of gastosDelMes) {
+      if (fijoDe(m)) continue;
+      const cat = claseDeGasto(m);
+      variablesPorCategoria[cat] = (variablesPorCategoria[cat] || 0) + Number(m.gasto);
+    }
+    const variablesDesglose = Object.entries(variablesPorCategoria).filter(
+      ([cat, v]) => cat !== "Otros" || v > 0
+    );
+    const totalVariables = variablesDesglose.reduce((s, [, v]) => s + v, 0);
+
     const resumenAOA = [
       [`Mis Cuentas — ${nombreMes}`],
       [],
-      ["Ingresos previstos", ingresosPrevistos],
-      ["Gastos fijos previstos", gastosFijosPrevistos],
-      ["Meta de ahorro", metaMin],
-      ["Disponible para gastar", disponibleParaGastar],
+      ["INGRESOS", ingresosMes],
+      ...Object.entries(ingresosPorConcepto).map(([c, v]) => ["   " + c, v]),
       [],
-      ["Ingresos reales este mes", ingresosMes],
-      ["Gastos reales este mes", gastosMes],
-      ["Ahorro real este mes", ahorroRealMes],
+      ["GASTOS FIJOS", totalFijos],
+      ...fijosDesglose.map(([c, v]) => ["   " + c, v]),
       [],
-      [`Comparado con ${nombreMesAnterior}`],
-      ["Concepto", nombreMes, nombreMesAnterior, "Diferencia"],
-      ["Ingresos", ingresosMes, ingresosMesAnterior, ingresosMes - ingresosMesAnterior],
-      ["Gastos", gastosMes, gastosMesAnterior, gastosMes - gastosMesAnterior],
-      ["Ahorro real", ahorroRealMes, ahorroMesAnterior, ahorroRealMes - ahorroMesAnterior],
+      ["GASTOS VARIABLES", totalVariables],
+      ...variablesDesglose.map(([c, v]) => ["   " + c, v]),
+      [],
+      ["TOTAL INGRESOS", ingresosMes],
+      ["TOTAL GASTOS", gastosMes],
+      ["AHORRO DEL MES", ahorroRealMes],
       [],
       ["Saldo total actual", saldoActual],
     ];
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenAOA);
-    wsResumen["!cols"] = [{ wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 14 }];
+    wsResumen["!cols"] = [{ wch: 30 }, { wch: 14 }];
+    for (const celda of Object.keys(wsResumen)) {
+      if (celda.startsWith("B") && typeof wsResumen[celda].v === "number") wsResumen[celda].z = '#,##0.00 "€"';
+    }
     XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
 
     // ---- Movimientos ----
@@ -466,24 +496,6 @@ export default function Home() {
     const wsMov = XLSX.utils.aoa_to_sheet(movAOA);
     wsMov["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
     XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
-
-    // ---- Gastos Fijos ----
-    const gfAOA = [
-      ["Concepto", "Día", "Importe"],
-      ...gastosFijos.map((gf) => [gf.concepto, gf.dia, Number(gf.importe)]),
-    ];
-    const wsGF = XLSX.utils.aoa_to_sheet(gfAOA);
-    wsGF["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 12 }];
-    XLSX.utils.book_append_sheet(wb, wsGF, "Gastos Fijos");
-
-    // ---- Gastos Variables (del mes seleccionado) ----
-    const gvAOA = [
-      ["Categoría", "Presupuesto", "Gastado", "Resta"],
-      ...variablesConGasto.map((c) => [c.concepto, Number(c.importe), c.gastado, c.resta]),
-    ];
-    const wsGV = XLSX.utils.aoa_to_sheet(gvAOA);
-    wsGV["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 12 }, { wch: 12 }];
-    XLSX.utils.book_append_sheet(wb, wsGV, "Gastos Variables");
 
     XLSX.writeFile(wb, `mis_cuentas_${claveMes}.xlsx`);
   }
@@ -1122,7 +1134,7 @@ export default function Home() {
       <div className="card no-imprimir">
         <h2 className="card-title">Exportar mis datos</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
-          El Excel lleva varias pestañas (Resumen, Movimientos, Gastos Fijos, Gastos Variables). El PDF es un informe con la comparativa del mes anterior y el gráfico de gastos.
+          El Excel lleva el resumen del mes (ingresos, gastos fijos y gastos variables por categoría) y la lista de movimientos. El PDF es un informe con la comparativa del mes anterior y el gráfico de gastos.
         </p>
         <div style={{ display: "flex", gap: 10 }}>
           <button type="button" onClick={exportarExcel} style={{ flex: 1 }}>

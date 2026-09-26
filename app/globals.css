@@ -10,21 +10,61 @@
   --color-mauve: #a08384;
   --color-cream: #d9d6ca;
   --color-border: #e6e2d4;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(58,58,52,0.04), 0 6px 20px rgba(58,58,52,0.06);
 }
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
 }
 .container {
   max-width: 760px;
   margin: 0 auto;
   padding: 24px 16px 80px;
 }
-h1 {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
+.cabecera {
+  margin: 8px 0 20px;
+  padding: 4px 4px 0;
+}
+.cabecera h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--color-primary-dark);
+}
+.cabecera-fecha {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+.cabecera-fecha::first-letter { text-transform: uppercase; }
+.seccion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+.seccion::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--color-text);
 }
 .subtitle {
   color: var(--color-muted);
@@ -33,27 +73,40 @@ h1 {
 }
 .card {
   background: var(--color-card);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(58,58,52,0.1);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
   border: 1px solid var(--color-border);
 }
 .saldo-actual {
   text-align: center;
-  padding: 24px 16px;
+  padding: 28px 20px 20px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border: none;
+  color: white;
 }
 .saldo-actual .label {
-  font-size: 0.85rem;
-  color: var(--color-muted);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.85);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  font-weight: 600;
 }
 .saldo-actual .valor {
-  font-size: 2.4rem;
-  font-weight: 700;
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: white;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.saldo-actual .link-btn { color: rgba(255,255,255,0.9); }
+.saldo-actual .link-btn:hover { color: white; }
+.saldo-actual input { border-color: transparent; }
+.saldo-actual .editar-saldo button:not(.link-btn) {
+  background: white;
   color: var(--color-primary-dark);
-  margin-top: 4px;
 }
 table {
   width: 100%;
@@ -86,10 +139,16 @@ input, select {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   background: white;
   color: var(--color-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(117,151,143,0.2);
 }
 label {
   font-size: 0.8rem;
@@ -101,12 +160,15 @@ button {
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   grid-column: 1 / -1;
+  transition: background 0.15s, transform 0.1s;
 }
+button:active { transform: scale(0.98); }
 button:hover { background: var(--color-primary-dark); }
 button.borrar {
   background: transparent;
@@ -183,8 +245,11 @@ button.borrar {
   color: var(--color-primary-dark);
   padding: 4px 0;
   font-size: 0.85rem;
+  font-weight: 500;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
+.link-btn:hover { background: transparent; color: var(--color-text); }
 .gf-item {
   display: flex;
   justify-content: space-between;
@@ -200,8 +265,8 @@ button.borrar {
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: 999px;
+  padding: 5px 12px;
   font-size: 0.75rem;
 }
 .gf-editable {
@@ -274,7 +339,7 @@ button.borrar {
 }
 .mes-actual {
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   min-width: 160px;
   text-align: center;
 }
@@ -304,6 +369,8 @@ button.borrar {
   .no-imprimir, .borrar, .mini-btn, .link-btn { display: none !important; }
   body { background: white; }
   .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  .saldo-actual { background: white; color: var(--color-text); }
+  .saldo-actual .label, .saldo-actual .valor { color: var(--color-text); }
 }
 .fila-edit {
   display: flex;
@@ -382,4 +449,9 @@ button.borrar {
 }
 @media print {
   .solo-imprimir { display: block; }
+}
+.tabla-scroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
 }

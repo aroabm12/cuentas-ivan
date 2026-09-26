@@ -42,11 +42,11 @@ base de datos y rellena tu lista de gastos fijos de partida — no hay que
 ejecutar nada a mano.
 
 Arriba del todo, donde pone "Tienes ahora mismo", pulsa **Corregir saldo de
-partida** y pon tu saldo real de hoy (tarjeta + ahorro juntos).
+partida** y pon tu saldo real de hoy.
 
 ## Qué incluye esta versión
 
-- **Saldo actual**: tarjeta y ahorro juntos en un solo número.
+- **Saldo actual**: todo tu dinero en un solo número.
 - **Resumen del mes**: ingresos, gastos y ahorro real, comparado con tu meta
   de ahorro (editable, por defecto 0€) — en verde si la alcanzas, en
   rojo si no.

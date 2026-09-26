@@ -544,8 +544,12 @@ export default function Home() {
 
   return (
     <div className="container">
-      <h1>Mis Cuentas</h1>
-      <p className="subtitle">Tarjeta y ahorro, todo junto en un solo número.</p>
+      <header className="cabecera">
+        <h1>Mis Cuentas</h1>
+        <p className="cabecera-fecha" suppressHydrationWarning>
+          {hoy.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        </p>
+      </header>
 
       {error && (
         <div className="card error-msg" style={{ marginBottom: 20 }}>
@@ -564,7 +568,7 @@ export default function Home() {
                 setNuevoSaldoInicial(String(saldoInicial));
                 setEditandoSaldo(true);
               }}
-              style={{ background: "transparent", color: "#2f5496" }}
+              className="link-btn"
             >
               Corregir saldo de partida
             </button>
@@ -583,9 +587,7 @@ export default function Home() {
       </div>
 
       <div className={"card tarjeta-hoy" + (ingresosHoy.length || gastosHoy.length ? " con-eventos" : "")}>
-        <strong style={{ textTransform: "capitalize" }}>
-          Hoy, {hoy.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
-        </strong>
+        <h2 className="card-title">📅 Hoy, {hoy.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}</h2>
         {ingresosHoy.length === 0 && gastosHoy.length === 0 ? (
           <p className="subtitle" style={{ margin: "8px 0 0" }}>
             No tienes ningún ingreso ni gasto fijo previsto para hoy.
@@ -618,6 +620,7 @@ export default function Home() {
         )}
       </div>
 
+      <h3 className="seccion no-imprimir">Tu mes</h3>
       <div className="selector-mes">
         <button type="button" className="mes-btn" onClick={mesAnterior}>‹</button>
         <span className="mes-actual" style={{ textTransform: "capitalize" }}>{nombreMes}</span>
@@ -690,7 +693,7 @@ export default function Home() {
 
       <div className={"card resumen-mes" + (enMeta ? " en-meta" : " fuera-meta")}>
         <div className="resumen-mes-header">
-          <strong>Tu presupuesto de este mes</strong>
+          <h2 className="card-title">💰 Tu presupuesto de este mes</h2>
           <span className={"pill" + (enMeta ? " verde" : " rojo")}>
             {enMeta ? "Vas dentro de presupuesto" : "Te has pasado"}
           </span>
@@ -806,7 +809,7 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <strong>Gastos fijos de este mes</strong>
+        <h2 className="card-title">📌 Gastos fijos de este mes</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           Toca uno pendiente para apuntarlo con un clic (usa el importe de siempre y la fecha de hoy).
         </p>
@@ -828,7 +831,7 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <strong>Gastos variables de este mes</strong>
+        <h2 className="card-title">🛍️ Gastos variables de este mes</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           Se rellena solo con lo que escribes abajo en "Añadir movimiento" si el concepto se parece al nombre de la categoría.
         </p>
@@ -878,8 +881,9 @@ export default function Home() {
         })}
       </div>
 
+      <h3 className="seccion no-imprimir">Movimientos</h3>
       <div className="card no-imprimir">
-        <strong>Añadir movimiento</strong>
+        <h2 className="card-title">➕ Añadir movimiento</h2>
         <form className="nuevo" onSubmit={guardarMovimiento}>
           <div className="tipo-toggle">
             <button type="button" className={tipo === "gasto" ? "activo gasto" : ""} onClick={() => setTipo("gasto")}>
@@ -919,11 +923,12 @@ export default function Home() {
 
       <div className="card">
         <div className="resumen-mes-header">
-          <strong>Movimientos</strong>
+          <h2 className="card-title">🧾 Movimientos</h2>
           <button type="button" className="link-btn" onClick={() => setMostrarTodosMovs((v) => !v)}>
             {mostrarTodosMovs ? "ver solo este mes" : "ver todos"}
           </button>
         </div>
+        <div className="tabla-scroll">
         <table>
           <thead>
             <tr>
@@ -980,8 +985,10 @@ export default function Home() {
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
 
+      <h3 className="seccion no-imprimir">Ajustes</h3>
       <div className="card no-imprimir">
         <button type="button" className="link-btn" onClick={() => setMostrarGestionVar((v) => !v)}>
           {mostrarGestionVar ? "Ocultar gestión de gastos variables" : "Gestionar mis categorías de gastos variables"}
@@ -1100,7 +1107,7 @@ export default function Home() {
       </div>
 
       <div className="card no-imprimir">
-        <strong>Exportar mis datos</strong>
+        <h2 className="card-title">📤 Exportar mis datos</h2>
         <p className="subtitle" style={{ margin: "6px 0 12px" }}>
           El Excel lleva varias pestañas (Resumen, Movimientos, Gastos Fijos, Gastos Variables). El PDF es un informe con la comparativa del mes anterior y el gráfico de gastos.
         </p>
